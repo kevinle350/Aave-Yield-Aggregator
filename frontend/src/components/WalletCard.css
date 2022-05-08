@@ -1,0 +1,6 @@
+.walletCard {
+	margin: 1rem;
+	border: 0.0625rem solid black;
+	border-radius: 0.3125rem;
+    padding: 1.25rem;
+}
