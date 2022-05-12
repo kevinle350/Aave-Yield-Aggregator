@@ -9,6 +9,7 @@ Users deposit USDC and get free Yield(rate tbd)
 *   Uses supplied USDC to borrow more USDC if supply rate is higher than borrow rate
 *   Use AaveOracle to get USDC yields
 *   Loop until user withdraws which returns their initial staked USDC + rewards from staking
+*   Also mate sure health ratio doesn't go below 1 or user gets wrecked
 npm run build
 npm run test
 npm run local-testnet       //change this script to current contract
@@ -28,11 +29,17 @@ use user address to withdraw USDC using aUSDC as collateral which takes a fee bu
 
 
 Bob
-Start -> 5 USDC -> 5 aUSDC = 5 kUSDC minted
-After time         6 aUSDC   5 kUSDC
+     -> 5 USDC -> 5 aUSDC = 5 kUSDC 
+        6 aUSDC   
 
 Alice
      -> 5 aUSDC * (5/6) = 4.16 kUSDC
+        8 aUSDC
+Joe
+     -> 5 aUSDC * (9.16/14) = 3.27 kUSDC
+
+kUSDC = 12.43
+aUSDC = 19
 
 Total kUSDC = 9.16
 Withdraw(Bob): 9.16/5 = 1.832
@@ -42,3 +49,14 @@ Withdraw(Alice): 9.16/4.16 = 2.2019230769230769230769230769231
       Anytime someone adds more aUSDC, they get deposited amount * ratio minted kUSDC
         ^ this value doesnt change but the total Aave amount will 
         Withdraw Total supply of kUSDC/(initial kUSDC minted)
+
+6 + 5 = 11 aUSDC
+11 * 
+Bob: 11 * 5/9.16 = 6
+Alice: 11 * 4.16/9.16 = 5
+
+Bob: 19 * 5/12.43 = 7.64
+Alice: 19 * 4.16/12.43 = 6.35
+Joe: 19 * 3.27/12.43 = 4.99
+
+(tot aUSDC) * (init kUSDC)/(tot kUSDC)
