@@ -1,24 +1,25 @@
 #   Aave Farm
-
-Users deposit USDC and get free Yield(rate tbd)
+Users deposit USDC into the UI. YieldFarm contract takes the USDC automatedly supplies the USDC into Aave as collateral and 
+borrows more USDC. This action is looped for while the user hasn't withdrawn their USDC + rewards(from staking) and the acion is
+executed when the supply APY is greater than the borrow APY to "compound" the yield; otherwise, USDC just left as collateral and gains
+small yield from Aave. User withdraws and gets free yield just for depositing into our UI. We take 30% of the amccumulated yield for 
+compounding the users yield for them. 
 
 #   Approach
-
 *   User deposit USDC which goes into YieldFarm contract
 *   YieldFarm contract uses supply function from Aave Pool contract gets aUSDC
 *   Uses supplied USDC to borrow more USDC if supply rate is higher than borrow rate
-*   Use AaveOracle to get USDC yields
+*   Get USDC yield on-chain or through theGraph protocl
 *   Loop until user withdraws which returns their initial staked USDC + rewards from staking
-*   Also mate sure health ratio doesn't go below 1 or user gets wrecked
-npm run build
-npm run test
-npm run local-testnet       //change this script to current contract
-npm run deploy:local
+*   Also make sure health ratio >= 1 to prevent liquidation
+*   Take a cut (x%) of users profit, for now 30%
+*   In testing, need to fork a chain otherwise its a clean chain and doesn't take an address
 
-#   Resources
-https://www.youtube.com/watch?v=uhMOcD2oDFk
-https://medium.com/coinmonks/create-and-deploy-a-solidity-contract-to-avalanche-with-hardhat-2c5cd5e4fa93
-https://medium.com/coinmonks/create-an-avalanche-dapp-with-ethers-metamask-and-react-342d8d22cb30
+#    Think about
+*    How to get max value to repay debt
+*    Accounting for gas cost
+*    Testing: how to get wallet with USDC 
+
 
 #   Notes
 User supplies USDC

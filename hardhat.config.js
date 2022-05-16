@@ -16,16 +16,34 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 });
 
 
-const AVALANCHE_TEST_PRIVATE_KEY = "";
+// const AVALANCHE_TEST_PRIVATE_KEY = "";
 
 module.exports = {
     solidity: "0.8.4",
     networks: {
-        avalancheTest: {
-            url: 'https://api.avax-test.network/ext/bc/C/rpc',
-            gasPrice: 225000000000,
-            chainId: 43113,
-            accounts: [`0x${AVALANCHE_TEST_PRIVATE_KEY}`]
-        }
+        hardhat: {
+            gas: 8 * 10 ** 6,  // tx gas limit
+            blockGasLimit: 8 * 10 ** 6, // Avalanche Gas Limit
+            gasPrice: 50537197095,
+            allowUnlimitedContractSize: true,
+            chainId: 1,
+            // Uncomment when running normal tests, and comment when forking. set enabled to true
+            //accounts: accountsList,
+            forking: {
+                enabled: true,
+                // url: 'https://api.avax.network/ext/bc/C/rpc', // Mainnet
+                // blockNumber: 7217503
+                url: 'https://api.avax-test.network/ext/bc/C/rpc', // Testnet
+                // blockNumber: 2672331
+            }
+        },
     }
+    // networks: {
+    //     avalancheTest: {
+    //         url: 'https://api.avax-test.network/ext/bc/C/rpc',
+    //         gasPrice: 225000000000,
+    //         chainId: 43113,
+    //         accounts: [`0x${AVALANCHE_TEST_PRIVATE_KEY}`]
+    //     }
+    // }
 };

@@ -3,16 +3,22 @@
 //
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
+const { ethers } = require("hardhat");
 const hre = require("hardhat");
 
 async function main() {
-  // We get the contract to deploy
-  const YieldFarm = await hre.ethers.getContractFactory("YieldFarm");
-  const yieldFarmContract = await SimpleStorage.deploy();
+  const [deployer] = await ethers.getSigners();
+  console.log("Deploying contracts with the account:", deployer.address);
+  console.log("Account balance:", (await deployer.getBalance()).toString());
 
-  await yieldFarmContract.deployed();
+  // const YieldFarm = await hre.ethers.getContractFactory("YieldFarm");
+  // const yieldFarmContract = await SimpleStorage.deploy();
+  const RecieptToken = await hre.ethers.getContractFactory("contracts/RecieptToken.sol:RecieptToken");
+  const recieptTokenContract = await RecieptToken.deploy();
 
-  console.log("SimpleStorage deployed to:", simpleStorage.address);
+  await recieptTokenContract.deployed();
+
+  console.log("SimpleStorage deployed to:", recieptTokenContract.address);
 }
 
 
