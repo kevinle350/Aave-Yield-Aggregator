@@ -19,7 +19,10 @@ compounding the users yield for them.
 *    How to get max value to repay debt
 *    Accounting for gas cost
 *    Testing: how to get wallet with USDC 
+*    Need to account for if there is enough liquidity to borrow
 
+#    Resources
+https://stackoverflow.com/questions/71106843/check-balance-of-erc20-token-in-hardhat-using-ethers-js
 
 #   Notes
 User supplies USDC

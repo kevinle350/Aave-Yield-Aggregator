@@ -31,8 +31,8 @@ interface RecieptToken {
 
 contract YieldFarm {
     // Addresses
-    address private PoolAddress = address(0x73A92E2b1Ec50bdf58aD5A2F6FAFB07d7D00E034);
-    address private USDC = address(0x3E937B4881CBd500d05EeDAB7BA203f2b7B3f74f);
+    address private PoolAddress;
+    address private USDC;
     address private kUSDC;
     address private aUSDC; 
 
@@ -42,8 +42,11 @@ contract YieldFarm {
 
     address private owner;
     mapping(address => uint256) private userkUSDC;   // keeps track of how much initial kUSDC minted per user; the sum the map is the total supply of kUSDC
+    uint256 tracker;    // 0 == no stakers, else theres a staker
 
     constructor(address _kUSDC) {
+        PoolAddress = address(0xb47673b7a73D78743AFF1487AF69dBB5763F00cA);  // pool proxy
+        USDC = address(0x3E937B4881CBd500d05EeDAB7BA203f2b7B3f74f);
         kUSDC = _kUSDC;
         DataTypes.ReserveData memory reserves = Pool(PoolAddress).getReserveData(USDC);
         aUSDC = reserves.aTokenAddress;
@@ -56,10 +59,11 @@ contract YieldFarm {
     // Stake = (init USDC) * (tot kUSDC)/(tot aUSDC)
     function stakeUSDC(uint256 _amount) external {
         require(_amount > 0, "Amount should be greater than zero");
-        IERC20(USDC).approve(address(this), _amount);
+        IERC20(USDC).approve(address(this), _amount);   // need to approve outside of the function
         IERC20(USDC).transferFrom(msg.sender, address(this), _amount);
-        if (RecieptToken(kUSDC).userBalance(address(this)) == 0) {
+        if (tracker == 0) {
             userkUSDC[msg.sender] = _amount;
+            RecieptToken(kUSDC).mintkUSDC(address(this), _amount);
         } else {
             uint256 currentATokenBalance = IERC20(aUSDC).balanceOf(address(this));
             uint256 currentkUSDCBalance = RecieptToken(kUSDC).userBalance(address(this));
@@ -70,10 +74,11 @@ contract YieldFarm {
         }
         IERC20(USDC).approve(address(PoolAddress), _amount);
         Pool(PoolAddress).supply(USDC, _amount, address(this), refferalCode);
+        tracker += 1;
         _looping();
     }
 
-    // User Withdraws their USDC + rewards
+    // User Withdraws their total USDC + rewards
     // balance = (tot aUSDC) * (init kUSDC)/(tot kUSDC)
     function withdrawUSDC() external {
         uint256 currentATokenBalance = IERC20(aUSDC).balanceOf(address(this));
@@ -86,24 +91,26 @@ contract YieldFarm {
         uint256 cut = balance * 70/100;
         IERC20(USDC).approve(msg.sender, cut);
         IERC20(USDC).transferFrom(address(this), msg.sender, cut);
+        tracker -= 1;   // Remove staker
     }
 
 
     /* These functions to be used for looping */
 
     // USDC turns to aUSDC to be stored on this contract
-    function _supplyToAave(address _token, uint256 _amount) private {
+    function _supplyToAave(address _token, uint256 _amount) public {
+        require(IERC20(_token).balanceOf(address(this)) >= _amount, "Insufficient balance");
         IERC20(_token).approve(address(PoolAddress), _amount);     // _token should be aUSDC
-        Pool(PoolAddress).supply(_token, _amount, address(this), refferalCode);
+        Pool(address(PoolAddress)).supply(_token, _amount, address(this), refferalCode);  
     }
 
     // Borrow USDC using the underlying aUSDC(from user to contract)
-    function _borrowFromAave(address _token, uint256 _amount) private {
+    function _borrowFromAave(address _token, uint256 _amount) public {
         Pool(PoolAddress).borrow(_token, _amount, interestRateMode, refferalCode, address(this));   // _token should be aUSDC
     }
 
     // Repay debt to Aave from borrowing call
-    function _repayDebtAave(address _token) private {
+    function _repayDebtAave(address _token) public {
         uint256 max = 2**256 - 1;   //supposed to use uint(-1) not sure why that errors
         IERC20(_token).approve(address(PoolAddress), max);  // _token should be aUSDC
         Pool(PoolAddress).repay(_token, max, interestRateMode, address(this));
@@ -144,4 +151,60 @@ contract YieldFarm {
             }
         }
     }
+
+    
+    /* Functions for testing  */
+
+    // Without looping
+    function testStake(uint256 _amount) external {
+        require(_amount > 0, "Amount should be greater than zero");
+        // IERC20(USDC).approve(address(this), _amount);
+        approveToken(_amount);  // need to approve outside of the function
+        IERC20(USDC).transferFrom(msg.sender, address(this), _amount);
+        if (tracker == 0) {  // When there are no stakers
+            userkUSDC[msg.sender] = _amount;    
+            RecieptToken(kUSDC).mintkUSDC(address(this), _amount);
+            console.log("Bob");
+        } else {
+            console.log("Alice");
+            uint256 currentATokenBalance = IERC20(aUSDC).balanceOf(address(this));  // 5
+            console.log(currentATokenBalance);
+            uint256 currentkUSDCBalance = RecieptToken(kUSDC).userBalance(address(this));   // 0
+            console.log(currentkUSDCBalance);
+            uint256 ratio = currentkUSDCBalance/currentATokenBalance;   // Fails here prob some decimal error
+            console.log("Here");
+            uint256 kUSDCToMint = _amount * ratio;
+            RecieptToken(kUSDC).mintkUSDC(address(this), kUSDCToMint);
+            userkUSDC[msg.sender] = kUSDCToMint;
+        }      
+        IERC20(USDC).approve(address(PoolAddress), _amount);
+        Pool(PoolAddress).supply(USDC, _amount, address(this), refferalCode);
+        tracker += 1;
+        console.log("Out");
+    }
+
+    function approveToken(uint256 _amount) public {
+        IERC20(USDC).approve(address(this), _amount);
+    }
+
+    function getInitialToken(address _user) external view returns(uint256) {
+        return userkUSDC[_user];
+    }
+
+    function transferToken(uint256 _amount) external {
+        uint256 bal = IERC20(USDC).balanceOf(msg.sender);
+        console.log(bal);
+
+        // IERC20(USDC).approve(address(this), _amount+1);
+        IERC20(USDC).transferFrom(msg.sender, address(this), _amount);
+
+        // IERC20(USDC).transfer(address(this), _amount);
+        console.log("After contract transfer");
+        uint256 bal2 = IERC20(USDC).balanceOf(msg.sender);
+   
+        console.log(bal2);
+    }
+
 }
+
+

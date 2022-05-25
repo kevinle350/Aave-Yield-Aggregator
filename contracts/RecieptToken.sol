@@ -11,7 +11,7 @@ contract RecieptToken is ERC20 {
     }
 
     function mintkUSDC(address _to, uint _amount) external {
-        require(msg.sender == admin, 'only admin');
+        // require(msg.sender == admin, 'only admin');
         _mint(_to, _amount);
     }
 
