@@ -1,4 +1,4 @@
-#   Aave Farm
+#   Aave Yield Aggregator
 Users deposit USDC into the UI. YieldFarm contract takes the USDC automatedly supplies the USDC into Aave as collateral and 
 borrows more USDC. This action is looped for while the user hasn't withdrawn their USDC + rewards(from staking) and the acion is
 executed when the supply APY is greater than the borrow APY to "compound" the yield; otherwise, USDC just left as collateral and gains
